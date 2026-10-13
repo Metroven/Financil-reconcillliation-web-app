@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>Hello, {{ g.user['username'] }}</h1>
+    <p class="muted">{{ nfiles }} file{{ '' if nfiles == 1 else 's' }} uploaded.</p></div>
+  <div class="actions">
+    <a class="btn quiet" href="{{ url_for('files') }}">Upload files</a>
+    <a class="btn" href="{{ url_for('new_reconciliation') }}">New reconciliation</a>
+  </div>
+</div>
+
+<div class="sheet">
+  <h2>Recent reconciliations</h2>
+  {% if runs %}
+  <div class="tablewrap"><table>
+    <thead><tr><th>Name</th><th>Run on</th><th class="num">Matched</th><th class="num">Discrepancies</th><th class="num">Unmatched</th><th class="num">Net difference</th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td><a href="{{ url_for('result', rec_id=r.id) }}">{{ r.name }}</a></td>
+        <td>{{ r.created_at }}</td>
+        <td class="num">{{ r.summary.matched }}</td>
+        <td class="num">{{ r.summary.discrepancies }}</td>
+        <td class="num">{{ r.summary.unmatched_a + r.summary.unmatched_b }}</td>
+        <td class="num {{ 'cross' if r.summary.net_difference != 0 }}">{{ r.summary.net_difference|money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+    <p class="empty">Nothing here yet. Upload two files, such as a bank statement and your ledger, then start a reconciliation.</p>
+  {% endif %}
+</div>
+{% endblock %}

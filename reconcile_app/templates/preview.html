@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Preview {{ file['original_name'] }}{% endblock %}
+{% block content %}
+<div class="pagehead"><div><h1>{{ file['original_name'] }}</h1>
+  <p class="muted">Showing the first {{ rows|length }} of {{ total }} rows.</p></div>
+  <a class="btn quiet" href="{{ url_for('files') }}">Back to files</a></div>
+<div class="sheet"><div class="tablewrap"><table>
+  <thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for r in rows %}<tr>{% for c in r %}<td class="clip">{{ '' if c is none else c }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

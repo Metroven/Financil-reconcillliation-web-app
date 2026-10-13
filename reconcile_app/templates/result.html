@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ run['name'] }}{% endblock %}
+
+{% macro spread(items, kind) %}
+<div class="tablewrap"><table class="spread">
+  <thead><tr>
+    <th>Date</th><th>Reference</th><th>Description (A)</th><th class="num">Amount A</th>
+    <th class="gutter"><span class="sr" title="Status">&nbsp;</span></th>
+    <th class="num">Amount B</th><th>Description (B)</th><th>Reference</th><th>Date</th>
+    {% if kind == 'disc' %}<th class="num">Difference</th>{% endif %}
+  </tr></thead>
+  <tbody>
+  {% for m in items %}
+    <tr class="{{ 'disc' if kind == 'disc' }}">
+      <td class="nw">{{ m.a.date }}</td><td>{{ m.a.reference }}</td><td class="clip" title="{{ m.a.description }}">{{ m.a.description }}</td>
+      <td class="num">{{ m.a.amount|money }}</td>
+      <td class="gutter">{% if kind == 'disc' %}<span class="q" title="{{ m.reason }}">?</span>{% else %}<span class="tick" title="Matched by {{ m.method }}">&#10003;</span>{% endif %}</td>
+      <td class="num">{{ m.b.amount|money }}</td><td class="clip" title="{{ m.b.description }}">{{ m.b.description }}</td>
+      <td>{{ m.b.reference }}</td><td class="nw">{{ m.b.date }}</td>
+      {% if kind == 'disc' %}<td class="num diff">{{ m.difference|money }}</td>{% endif %}
+    </tr>
+    {% if kind == 'disc' %}<tr class="disc note"><td colspan="10" class="reason">{{ m.reason }}</td></tr>{% endif %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endmacro %}
+
+{% macro one_sided(items, side) %}
+<div class="tablewrap"><table class="spread">
+  <thead><tr><th>Row</th><th>Date</th><th>Reference</th><th>Description</th><th class="num">Amount</th></tr></thead>
+  <tbody>
+  {% for r in items %}
+    <tr><td>{{ r.row }}</td><td class="nw">{{ r.date }}</td><td>{{ r.reference }}</td>
+      <td class="clip" title="{{ r.description }}">{{ r.description }}</td><td class="num">{{ r.amount|money }}</td></tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><td colspan="4">Total</td><td class="num">{{ items|sum(attribute='amount')|money }}</td></tr></tfoot>
+</table></div>
+{% endmacro %}
+
+{% block content %}
+{% set s = res.summary %}
+<div class="pagehead">
+  <div><h1>{{ run['name'] }}</h1>
+    <p class="muted">A: {{ run['file_a_name'] }} &nbsp;|&nbsp; B: {{ run['file_b_name'] }} &nbsp;|&nbsp; run {{ run['created_at'] }} UTC</p></div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('export', rec_id=run['id']) }}">Download CSV</a>
+    <form method="post" action="{{ url_for('delete_run', rec_id=run['id']) }}" onsubmit="return confirm('Delete this reconciliation?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn danger" type="submit">Delete</button></form>
+  </div>
+</div>
+
+<div class="balance">
+  <div><div class="k">Total of A</div><div class="v">{{ s.total_a|money }}</div><div class="sub">{{ s.count_a }} records</div></div>
+  <div><div class="k">Total of B</div><div class="v">{{ s.total_b|money }}</div><div class="sub">{{ s.count_b }} records</div></div>
+  <div><div class="k">Difference (A minus B)</div>
+    <div class="v {{ 'good' if s.net_difference == 0 else 'bad' }}">{{ s.net_difference|money }}</div>
+    <div class="sub">{{ 'Totals agree' if s.net_difference == 0 else 'Totals do not agree' }}</div></div>
+  <div><div class="k">Matched</div><div class="v">{{ s.match_rate }}%</div><div class="sub">{{ s.matched }} of {{ s.count_a }} records in A</div></div>
+</div>
+
+{% if s.skipped_a or s.skipped_b %}
+<div class="flash">Rows skipped because the amount was blank or not a number: {{ s.skipped_a }} in A, {{ s.skipped_b }} in B.</div>
+{% endif %}
+
+{% if s.fuzzy_skipped %}<div class="flash">Description matching was skipped because too many records were left over to compare. Add a reference or date column to improve matching.</div>{% endif %}
+
+<nav class="jump" aria-label="Jump to section">
+  <a href="#disc">Discrepancies <b>{{ s.discrepancies }}</b></a>
+  <a href="#ua">Only in A <b>{{ s.unmatched_a }}</b></a>
+  <a href="#ub">Only in B <b>{{ s.unmatched_b }}</b></a>
+  <a href="#ok">Matched <b>{{ s.matched }}</b></a>
+</nav>
+
+<section class="sheet" id="disc">
+  <h2>Discrepancies</h2>
+  <p class="muted">Records that look related but disagree. Review each one.</p>
+  {% if res.discrepancies %}{{ spread(res.discrepancies, 'disc') }}{% else %}<p class="empty">No discrepancies.</p>{% endif %}
+</section>
+
+<section class="sheet" id="ua">
+  <h2>Only in A</h2>
+  <p class="muted">In {{ run['file_a_name'] }} with no counterpart in {{ run['file_b_name'] }}.</p>
+  {% if res.unmatched_a %}{{ one_sided(res.unmatched_a, 'a') }}{% else %}<p class="empty">Every record in A was matched.</p>{% endif %}
+</section>
+
+<section class="sheet" id="ub">
+  <h2>Only in B</h2>
+  <p class="muted">In {{ run['file_b_name'] }} with no counterpart in {{ run['file_a_name'] }}.</p>
+  {% if res.unmatched_b %}{{ one_sided(res.unmatched_b, 'b') }}{% else %}<p class="empty">Every record in B was matched.</p>{% endif %}
+</section>
+
+<details class="sheet" id="ok">
+  <summary>Matched ({{ s.matched }})</summary>
+  <p class="muted" style="margin-top:.75rem">Hover a tick to see how the pair was matched.</p>
+  {% if res.matched %}{{ spread(res.matched, 'ok') }}{% else %}<p class="empty">No records matched.</p>{% endif %}
+</details>
+{% endblock %}

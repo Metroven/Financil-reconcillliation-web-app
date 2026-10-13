@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}My files{% endblock %}
+{% block content %}
+<div class="pagehead"><div><h1>My files</h1>
+  <p class="muted">Upload CSV or Excel (.xlsx) files. The first row must be column headings. Limit 10 MB.</p></div></div>
+
+<div class="sheet">
+  <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="files">Choose files</label>
+      <input id="files" name="files" type="file" accept=".csv,.xlsx,.xlsm" multiple required></div>
+    <button class="btn" type="submit">Upload</button>
+  </form>
+</div>
+
+<div class="sheet">
+  <h2>Uploaded files</h2>
+  {% if files %}
+  <div class="tablewrap"><table>
+    <thead><tr><th>File</th><th class="num">Rows</th><th>Uploaded</th><th></th></tr></thead>
+    <tbody>
+    {% for f in files %}
+      <tr>
+        <td>{{ f['original_name'] }}</td>
+        <td class="num">{{ f['row_count'] }}</td>
+        <td>{{ f['uploaded_at'] }}</td>
+        <td><div class="actions">
+          <a class="btn quiet small" href="{{ url_for('preview', file_id=f['id']) }}">Preview</a>
+          <form method="post" action="{{ url_for('delete_file', file_id=f['id']) }}"
+                onsubmit="return confirm('Delete {{ f['original_name']|e }}? Past results are kept.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn danger small" type="submit">Delete</button></form>
+        </div></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  <div class="actions" style="margin-top:1rem"><a class="btn" href="{{ url_for('new_reconciliation') }}">Reconcile two files</a></div>
+  {% else %}
+    <p class="empty">No files yet. Choose a bank statement, ledger export or any two lists of transactions above.</p>
+  {% endif %}
+</div>
+{% endblock %}

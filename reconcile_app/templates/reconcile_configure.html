@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Set up columns{% endblock %}
+{% macro colpick(prefix, headers, guess, field, label, required=False) %}
+  <div class="field">
+    <label for="{{ prefix }}_{{ field }}">{{ label }}{% if required %} <span class="hint">required</span>{% else %} <span class="hint">optional</span>{% endif %}</label>
+    <select id="{{ prefix }}_{{ field }}" name="{{ prefix }}_{{ field }}" {% if required %}required{% endif %}>
+      <option value="">{{ 'Choose a column' if required else 'None' }}</option>
+      {% for h in headers %}<option value="{{ loop.index0 }}" {% if guess[field] == loop.index0 %}selected{% endif %}>{{ h }}</option>{% endfor %}
+    </select>
+  </div>
+{% endmacro %}
+{% block content %}
+<div class="pagehead"><div><h1>Set up columns</h1>
+  <p class="muted">We guessed the columns from the headings. Check them, then run the reconciliation. Amount is required. Reference and date make matching more accurate.</p></div></div>
+<form method="post" action="{{ url_for('run') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="file_a" value="{{ a['id'] }}">
+  <input type="hidden" name="file_b" value="{{ b['id'] }}">
+  <div class="grid2">
+    <div class="sheet"><h2>File A: {{ a['original_name'] }}</h2>
+      {{ colpick('a', ha, ga, 'amount', 'Amount', True) }}
+      {{ colpick('a', ha, ga, 'reference', 'Reference or ID') }}
+      {{ colpick('a', ha, ga, 'date', 'Date') }}
+      {{ colpick('a', ha, ga, 'description', 'Description') }}
+    </div>
+    <div class="sheet"><h2>File B: {{ b['original_name'] }}</h2>
+      {{ colpick('b', hb, gb, 'amount', 'Amount', True) }}
+      {{ colpick('b', hb, gb, 'reference', 'Reference or ID') }}
+      {{ colpick('b', hb, gb, 'date', 'Date') }}
+      {{ colpick('b', hb, gb, 'description', 'Description') }}
+    </div>
+  </div>
+  <div class="sheet">
+    <h2>Matching rules</h2>
+    <div class="grid2">
+      <div class="field"><label for="tolerance">Amount tolerance <span class="hint">amounts closer than this count as equal</span></label>
+        <input id="tolerance" name="tolerance" type="number" step="0.01" min="0" value="0.01"></div>
+      <div class="field"><label for="date_window">Date window in days <span class="hint">how far apart matching dates can be</span></label>
+        <input id="date_window" name="date_window" type="number" step="1" min="0" max="365" value="3"></div>
+    </div>
+    <div class="field"><label class="check"><input type="checkbox" name="fuzzy" checked>
+      <span>Suggest probable matches by description when amounts differ slightly</span></label></div>
+    <div class="field"><label class="check"><input type="checkbox" name="flip_b">
+      <span>File B uses the opposite sign (for example, payments are positive in A and negative in B)</span></label></div>
+    <div class="field"><label for="name">Name this reconciliation <span class="hint">optional</span></label>
+      <input id="name" name="name" type="text" maxlength="120" placeholder="{{ a['original_name'] }} vs {{ b['original_name'] }}"></div>
+    <div class="actions"><button class="btn" type="submit">Run reconciliation</button>
+      <a href="{{ url_for('new_reconciliation') }}">Choose different files</a></div>
+  </div>
+</form>
+{% endblock %}

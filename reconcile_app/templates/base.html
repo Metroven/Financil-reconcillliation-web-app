@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} - Tally</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <a class="brand" href="{{ url_for('index') }}"><i aria-hidden="true"></i>Tally</a>
+    {% if g.user %}
+      <a class="nav" href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a class="nav" href="{{ url_for('files') }}" {% if request.endpoint in ('files','preview') %}aria-current="page"{% endif %}>My files</a>
+      <a class="nav" href="{{ url_for('history') }}" {% if request.endpoint in ('history','result') %}aria-current="page"{% endif %}>Past reconciliations</a>
+      <span class="who">{{ g.user['username'] }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="linkbtn" type="submit">Log out</button>
+      </form>
+    {% else %}
+      <a class="nav" href="{{ url_for('login') }}">Log in</a>
+      <a class="nav" href="{{ url_for('register') }}">Create account</a>
+    {% endif %}
+  </div>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}<div class="flash {{ cat }}" role="status">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
