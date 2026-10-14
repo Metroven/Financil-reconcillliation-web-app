@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Set Up Columns{% endblock %}
+
+{% macro tip(text) %}
+  <span class="tip-wrap">
+    <span class="tip-icon" tabindex="0" aria-label="Help">?</span>
+    <span class="tip-box" role="tooltip">{{ text }}</span>
+  </span>
+{% endmacro %}
+
+{% macro colpick(prefix, headers, guess, field, label, required=False, help='') %}
+  <div class="field">
+    <label for="{{ prefix }}_{{ field }}">
+      {{ label }}
+      {% if help %}{{ tip(help) }}{% endif %}
+      {% if required %}
+        <span class="hint">required</span>
+      {% else %}
+        <span class="hint">optional</span>
+      {% endif %}
+    </label>
+    <select id="{{ prefix }}_{{ field }}" name="{{ prefix }}_{{ field }}"
+            {% if required %}required{% endif %}>
+      <option value="">{{ 'Choose a column' if required else '— Not used —' }}</option>
+      {% for h in headers %}
+        <option value="{{ loop.index0 }}"
+          {% if guess[field] == loop.index0 %}selected{% endif %}>{{ h }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endmacro %}
+
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Set Up Columns</h1>
+    <p class="muted">We've guessed your columns — check them and click <strong>Run</strong>. Only the Amount column is required.</p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('run') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="file_a" value="{{ a['id'] }}">
+  <input type="hidden" name="file_b" value="{{ b['id'] }}">
+
+  <div class="grid2">
+    <div class="sheet">
+      <h2>📄 File A &nbsp;<span class="badge neutral">{{ a['original_name'] }}</span></h2>
+      {{ colpick('a', ha, ga, 'amount',      'Amount',           True,
+          'The column containing the transaction value — e.g. "Amount", "Debit/Credit", "Value".') }}
+      {{ colpick('a', ha, ga, 'reference',   'Reference / ID',   False,
+          'A unique transaction ID or check number. Helps match records with the same ID exactly.') }}
+      {{ colpick('a', ha, ga, 'date',        'Date',             False,
+          'The transaction date. Enables date-range matching so records a few days apart can still match.') }}
+      {{ colpick('a', ha, ga, 'description', 'Description',      False,
+          'Free-text description or payee name. Used for fuzzy matching when amounts are close.') }}
+    </div>
+
+    <div class="sheet">
+      <h2>📑 File B &nbsp;<span class="badge blue">{{ b['original_name'] }}</span></h2>
+      {{ colpick('b', hb, gb, 'amount',      'Amount',           True,
+          'The column containing the transaction value — e.g. "Amount", "Debit/Credit", "Value".') }}
+      {{ colpick('b', hb, gb, 'reference',   'Reference / ID',   False,
+          'A unique transaction ID or check number. Helps match records with the same ID exactly.') }}
+      {{ colpick('b', hb, gb, 'date',        'Date',             False,
+          'The transaction date. Enables date-range matching so records a few days apart can still match.') }}
+      {{ colpick('b', hb, gb, 'description', 'Description',      False,
+          'Free-text description or payee name. Used for fuzzy matching when amounts are close.') }}
+    </div>
+  </div>
+
+  <div class="sheet">
+    {# Optional name #}
+    <div class="field">
+      <label for="name">Reconciliation name <span class="hint">optional</span></label>
+      <input id="name" name="name" type="text" maxlength="120"
+             placeholder="{{ a['original_name'] }} vs {{ b['original_name'] }}">
+    </div>
+
+    {# Advanced settings — collapsed by default #}
+    <details class="advanced" id="adv-settings">
+      <summary>Advanced matching options</summary>
+      <div class="adv-body grid2">
+        <div class="field">
+          <label for="tolerance">
+            Amount tolerance
+            {{ tip('Two amounts are treated as equal if they differ by less than this value. Default 0.01 handles minor rounding.') }}
+          </label>
+          <input id="tolerance" name="tolerance" type="number" step="0.01" min="0" value="0.01">
+        </div>
+        <div class="field">
+          <label for="date_window">
+            Date window (days)
+            {{ tip('How many days apart two transactions can be and still be considered a match. Default 3 works for most bank lags.') }}
+          </label>
+          <input id="date_window" name="date_window" type="number" step="1" min="0" max="365" value="3">
+        </div>
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" name="fuzzy" checked>
+            <span>Suggest probable matches by description when amounts differ slightly</span>
+          </label>
+        </div>
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" name="flip_b">
+            <span>
+              File B uses the <strong>opposite sign</strong>
+              {{ tip('Enable this if payments that are positive in File A appear as negative in File B (or vice versa). Common when comparing a bank feed to a ledger.') }}
+            </span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <div class="actions" style="margin-top:1.25rem">
+      <button class="btn large" type="submit">Run reconciliation →</button>
+      <a href="{{ url_for('new_reconciliation') }}" class="btn quiet">← Choose different files</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

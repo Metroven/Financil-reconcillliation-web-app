@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Hello, {{ g.user['username'] }} 👋</h1>
+    <p class="muted">
+      {% if nfiles == 0 %}
+        Get started by uploading your first file below.
+      {% else %}
+        {{ nfiles }} file{{ '' if nfiles == 1 else 's' }} ready to reconcile.
+      {% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn quiet" href="{{ url_for('files') }}">Upload files</a>
+    <a class="btn" href="{{ url_for('new_reconciliation') }}">New reconciliation</a>
+  </div>
+</div>
+
+{% if not runs %}
+{# ── Onboarding guide for new users ── #}
+<div class="steps">
+  <div class="step">
+    <div class="step-icon">📂</div>
+    <div class="step-num">1</div>
+    <h3>Upload your files</h3>
+    <p>Upload a CSV or Excel file for each side — for example your ledger and your bank statement.</p>
+    <div class="step-cta">
+      <a class="btn" href="{{ url_for('files') }}">Upload files</a>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-icon">🔗</div>
+    <div class="step-num">2</div>
+    <h3>Pick two files to compare</h3>
+    <p>Tell Tally which file is File A and which is File B. We'll auto-detect your columns.</p>
+    <div class="step-cta">
+      <a class="btn quiet" href="{{ url_for('new_reconciliation') }}">Start reconciliation</a>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-icon">✅</div>
+    <div class="step-num">3</div>
+    <h3>See exactly what doesn't match</h3>
+    <p>Tally highlights discrepancies, unmatched records, and the net difference — all in one view.</p>
+    <div class="step-cta">
+      <span class="badge neutral">Results appear here</span>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" style="text-align:center; padding: 2.5rem 1.5rem;">
+  <p class="muted mb0" style="font-size:.95rem;">
+    No reconciliations yet. Upload two files to get started.
+  </p>
+</div>
+
+{% else %}
+{# ── Recent runs table ── #}
+<div class="sheet">
+  <h2>Recent reconciliations</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Run on</th>
+          <th class="num">Matched</th>
+          <th class="num">Issues</th>
+          <th class="num">Net difference</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in runs %}
+        <tr>
+          <td><a href="{{ url_for('result', rec_id=r.id) }}">{{ r.name }}</a></td>
+          <td class="muted" style="font-size:.88rem;white-space:nowrap">{{ r.created_at }}</td>
+          <td class="num">
+            <span class="badge green">✓ {{ r.summary.matched }}</span>
+          </td>
+          <td class="num">
+            {% set issues = r.summary.discrepancies + r.summary.unmatched_a + r.summary.unmatched_b %}
+            {% if issues == 0 %}
+              <span class="badge green">None</span>
+            {% else %}
+              <span class="badge red">{{ issues }}</span>
+            {% endif %}
+          </td>
+          <td class="num">
+            {% if r.summary.net_difference == 0 %}
+              <span class="badge green">0.00</span>
+            {% else %}
+              <span class="badge red">{{ r.summary.net_difference|money }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="actions mt1">
+    <a href="{{ url_for('history') }}" class="btn quiet small">View all history</a>
+    <a href="{{ url_for('new_reconciliation') }}" class="btn small">New reconciliation</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

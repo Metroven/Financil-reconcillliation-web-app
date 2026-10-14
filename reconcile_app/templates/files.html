@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}My Files{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>My Files</h1>
+    <p class="muted">Upload CSV or Excel (.xlsx) files — the first row must be column headings. Limit 10 MB per file.</p>
+  </div>
+</div>
+
+<div class="sheet">
+  <h2>Upload a file</h2>
+  <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="upload-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Choose files to upload">
+      <input id="files" name="files" type="file" accept=".csv,.xlsx,.xlsm" multiple
+             aria-label="Choose files" tabindex="-1">
+      <div class="dz-icon" aria-hidden="true">☁️</div>
+      <div class="dz-label">Drag your file here, or click to browse</div>
+      <div class="dz-sub">Supported: .csv, .xlsx — max 10 MB per file</div>
+      <div class="dz-selected" id="dz-selected" hidden></div>
+    </div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn" type="submit" id="upload-btn">Upload</button>
+    </div>
+  </form>
+</div>
+
+{% if files %}
+<div class="sheet">
+  <h2>Uploaded files</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th class="num">Rows</th>
+          <th>Uploaded</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for f in files %}
+        <tr>
+          <td>
+            <span style="font-weight:500">{{ f['original_name'] }}</span>
+          </td>
+          <td class="num">{{ f['row_count'] }}</td>
+          <td class="muted" style="font-size:.88rem;white-space:nowrap">{{ f['uploaded_at'] }}</td>
+          <td>
+            <div class="actions">
+              <a class="btn quiet small" href="{{ url_for('preview', file_id=f['id']) }}">Preview</a>
+              <form method="post" action="{{ url_for('delete_file', file_id=f['id']) }}"
+                    onsubmit="return confirm('Delete {{ f['original_name']|e }}?\nPast reconciliation results will be kept.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn danger small" type="submit">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if files|length >= 2 %}
+  <div class="actions mt1">
+    <a class="btn" href="{{ url_for('new_reconciliation') }}">Reconcile two files →</a>
+  </div>
+  {% else %}
+  <p class="muted" style="margin-top:1rem;font-size:.88rem">
+    Upload at least one more file to start a reconciliation.
+  </p>
+  {% endif %}
+</div>
+{% else %}
+<div class="sheet" style="text-align:center;padding:2rem 1.5rem">
+  <p class="muted mb0">No files uploaded yet. Use the dropzone above to add your first file.</p>
+</div>
+{% endif %}
+
+<script>
+(function () {
+  const zone  = document.getElementById('dropzone');
+  const input = document.getElementById('files');
+  const label = document.getElementById('dz-selected');
+
+  function updateLabel(files) {
+    if (!files || files.length === 0) { label.hidden = true; return; }
+    label.hidden = false;
+    label.textContent = files.length === 1
+      ? '📄 ' + files[0].name
+      : '📄 ' + files.length + ' files selected';
+  }
+
+  input.addEventListener('change', () => updateLabel(input.files));
+
+  zone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+  });
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) {
+      // Transfer the dropped files to the real input via DataTransfer
+      const dt = new DataTransfer();
+      Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+      input.files = dt.files;
+      updateLabel(input.files);
+    }
+  });
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+{% block content %}
+
+<div class="auth-wrap">
+  <div class="auth">
+
+    <div class="auth-brand">
+      <div class="logo-circle">
+        <span class="brand-icon" aria-hidden="true"></span>
+      </div>
+      <h1>Tally</h1>
+      <p>Your files and results are always private.</p>
+    </div>
+
+    <div class="sheet">
+      <h2 style="margin-bottom:1.25rem">Create your account</h2>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="username">
+            Username
+            <span class="hint">3–32 characters: letters, numbers, . - _</span>
+          </label>
+          <input id="username" name="username" type="text"
+                 value="{{ username }}" autocomplete="username" required autofocus
+                 pattern="[A-Za-z0-9_.\-]{3,32}" title="3-32 characters: letters, numbers, dot, dash or underscore">
+        </div>
+        <div class="field">
+          <label for="password">
+            Password
+            <span class="hint">at least 8 characters</span>
+          </label>
+          <input id="password" name="password" type="password"
+                 autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="field">
+          <label for="confirm">Confirm password</label>
+          <input id="confirm" name="confirm" type="password"
+                 autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="actions" style="margin-top:1.25rem">
+          <button class="btn large" type="submit" style="flex:1">Create account</button>
+        </div>
+      </form>
+    </div>
+
+    <p style="text-align:center; font-size:.9rem; color:var(--ink-soft)">
+      Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+    </p>
+
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}New Reconciliation{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>New Reconciliation</h1>
+    <p class="muted">Choose the two files you want to compare side-by-side.</p>
+  </div>
+</div>
+
+{% if files|length < 2 %}
+<div class="sheet" style="text-align:center; padding:2rem 1.5rem">
+  <p style="font-size:1.5rem;margin-bottom:.5rem">📂</p>
+  <h2 style="margin-bottom:.5rem">You need at least two files</h2>
+  <p class="muted">Upload a second file — for example, a bank statement to compare against your ledger.</p>
+  <a class="btn" href="{{ url_for('files') }}">Upload a file →</a>
+</div>
+{% else %}
+
+<div class="sheet" style="margin-bottom:1.25rem; padding:1rem 1.25rem; background:var(--blue-wash); border-color:var(--blue);">
+  <p class="mb0" style="font-size:.9rem; color:var(--blue)">
+    <strong>Tip:</strong>
+    Think of <strong>File A</strong> as your source of truth (e.g. your accounting ledger) and
+    <strong>File B</strong> as the document you're checking against it (e.g. a bank statement).
+    Tally will highlight every row that doesn't agree.
+  </p>
+</div>
+
+<form method="post" action="{{ url_for('configure') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid2" style="margin-bottom:1.25rem">
+
+    <div class="file-pick-card">
+      <div class="fp-badge">📄 File A — source of truth</div>
+      <div class="field mb0">
+        <label for="file_a">Choose File A</label>
+        <select id="file_a" name="file_a" required>
+          {% for f in files %}
+            <option value="{{ f['id'] }}">{{ f['original_name'] }} ({{ f['row_count'] }} rows)</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="file-pick-card">
+      <div class="fp-badge" style="color:var(--blue)">📑 File B — compare against A</div>
+      <div class="field mb0">
+        <label for="file_b">Choose File B</label>
+        <select id="file_b" name="file_b" required>
+          {% for f in files %}
+            <option value="{{ f['id'] }}" {% if loop.index == 2 %}selected{% endif %}>
+              {{ f['original_name'] }} ({{ f['row_count'] }} rows)
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+  </div>
+  <div class="actions">
+    <button class="btn large" type="submit">Continue to column setup →</button>
+    <a href="{{ url_for('files') }}" class="btn quiet">Upload more files</a>
+  </div>
+</form>
+{% endif %}
+
+{% endblock %}

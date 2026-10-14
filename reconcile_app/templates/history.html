@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Reconciliation History</h1>
+    <p class="muted">All your past runs — click any name to view its full results.</p>
+  </div>
+  <a class="btn" href="{{ url_for('new_reconciliation') }}">New reconciliation</a>
+</div>
+
+<div class="sheet">
+  {% if runs %}
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Files compared</th>
+          <th>Run on</th>
+          <th class="num">Matched</th>
+          <th class="num">Issues</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in runs %}
+        {% set issues = r.summary.discrepancies + r.summary.unmatched_a + r.summary.unmatched_b %}
+        <tr>
+          <td><a href="{{ url_for('result', rec_id=r.id) }}">{{ r.name }}</a></td>
+          <td class="muted" style="font-size:.88rem">
+            {{ r.file_a_name }} <span style="opacity:.5">vs</span> {{ r.file_b_name }}
+          </td>
+          <td class="muted" style="font-size:.88rem;white-space:nowrap">{{ r.created_at }}</td>
+          <td class="num">
+            <span class="badge green">✓ {{ r.summary.matched }}</span>
+          </td>
+          <td class="num">
+            {% if issues == 0 %}
+              <span class="badge green">None</span>
+            {% else %}
+              <span class="badge red">{{ issues }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No reconciliations yet. Upload two files and start one.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
