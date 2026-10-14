@@ -1,9 +1,0 @@
-Date,Reference,Description,Amount
-2026-09-01,INV-1001,Payment to Mwanza Supplies,"-1,250.00"
-2026-09-02,INV-1002,Customer payment Kilimo Ltd,"850.50"
-2026-09-03,EXP-1003,Office supplies,-125.75
-2026-09-04,TRF-1004,Transfer to savings,"-2,000.00"
-2026-09-05,FEE-1005,Bank service fee,-45.00
-2026-09-06,,Cash sale Arusha branch,310.00
-2026-09-07,INV-1007,Electricity TANESCO,-210.40
-2026-09-09,INV-1009,Refund Mbeya Traders,-75.00
